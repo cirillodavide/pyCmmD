@@ -251,4 +251,4 @@ requirements.txt
 
 ## License
 
-Add your chosen license here (e.g. MIT / GPL). Note the original CmmD method is GPL (≥2); the source databases carry their own licenses.
+The original CmmD method is GPL (≥2); the source databases carry their own licenses.
