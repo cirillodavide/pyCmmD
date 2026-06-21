@@ -79,6 +79,7 @@ def main() -> None:
             layer_weighting=cm.get("layer_weighting", "normalized"),
             n_iterations=cm.get("n_iterations", -1),
             nodelist=(cm.get("nodelist", "") or None),
+            layers=(cm.get("layers") or None),
             compute_distance=cm.get("compute_distance", True),
             jobs=jobs)),
     ]

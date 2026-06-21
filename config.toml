@@ -27,6 +27,7 @@ resolution_end   = 30.0
 interval         = 0.5
 seed             = 42
 layer_weighting  = "normalized"   # "normalized" (per-layer 1/2m, MolTi-like) or "equal"
+layers           = []             # which layers to feed into CmmD; [] = all. e.g. ["BioGRID","ChEMBL","Reactome"] to drop non-commercial Recon3D + OMIM-based Monarch
 n_iterations     = -1             # -1 = run Leiden to convergence (slow); 2 = fast, near-identical
 nodelist         = ""             # path to a gene-symbol file to restrict the distance matrix; "" = all genes
 compute_distance = true           # set false to skip the Hamming matrix

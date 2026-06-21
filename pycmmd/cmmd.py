@@ -50,15 +50,22 @@ from .utils import write_provenance
 # --------------------------------------------------------------------------- #
 # Multiplex loading
 # --------------------------------------------------------------------------- #
-def load_multiplex(layer_dir: Path):
+def load_multiplex(layer_dir: Path, layers=None):
     """Load harmonized layers into igraphs over a shared vertex set.
 
-    Returns (layers, graphs, node_names). Each layer is collapsed to simple
-    undirected edges; all graphs share vertex indices 0..n-1.
+    ``layers`` optionally selects a subset of layer names (default: all). The
+    node universe is the union of the selected layers only. Returns
+    (layers, graphs, node_names); each layer is collapsed to simple undirected
+    edges and all graphs share vertex indices 0..n-1.
     """
+    selected = list(layers) if layers else list(LAYER_NATIVE)
+    unknown = [l for l in selected if l not in LAYER_NATIVE]
+    if unknown:
+        raise ValueError(f"unknown layer(s): {unknown}; valid: {list(LAYER_NATIVE)}")
+
     layer_edges: dict[str, set] = {}
     nodes: set[str] = set()
-    for layer in LAYER_NATIVE:
+    for layer in selected:
         path = layer_dir / f"{layer}.edges.tsv"
         if not path.exists():
             continue
@@ -96,10 +103,10 @@ def _layer_weights(graphs, scheme: str):
 _SW: dict = {}
 
 
-def _init_sweep(harmonized_dir: str, weighting: str, seed: int, n_iterations: int):
-    # harmonized_dir passed explicitly so spawned workers don't depend on the
-    # parent's (possibly session-redirected) config globals.
-    _, graphs, names = load_multiplex(Path(harmonized_dir))
+def _init_sweep(harmonized_dir: str, weighting: str, seed: int, n_iterations: int, layers):
+    # harmonized_dir / layers passed explicitly so spawned workers don't depend
+    # on the parent's (possibly session-redirected) config globals.
+    _, graphs, names = load_multiplex(Path(harmonized_dir), layers)
     _SW["graphs"] = graphs
     _SW["weights"] = _layer_weights(graphs, weighting)
     _SW["seed"] = seed
@@ -117,9 +124,9 @@ def _sweep_one(gamma: float):
     return np.asarray(parts[0].membership, dtype=np.int32)
 
 
-def sweep(resolutions, harmonized_dir, weighting, seed, jobs, n_iterations):
+def sweep(resolutions, harmonized_dir, weighting, seed, jobs, n_iterations, layers):
     """Return (membership n x R int32, communities-per-resolution list)."""
-    initargs = (str(harmonized_dir), weighting, seed, n_iterations)
+    initargs = (str(harmonized_dir), weighting, seed, n_iterations, layers)
     if jobs <= 1:
         _init_sweep(*initargs)
         cols = [_sweep_one(g) for g in resolutions]
@@ -191,14 +198,14 @@ def hamming_counts(M, jobs):
 # --------------------------------------------------------------------------- #
 def run_cmmd(resolution_start=0.0, resolution_end=30.0, interval=0.5,
              seed=42, layer_weighting="normalized", nodelist=None,
-             compute_distance=True, jobs=None, n_iterations=-1) -> Path:
+             compute_distance=True, jobs=None, n_iterations=-1, layers=None) -> Path:
     config.ensure_dirs()
     jobs = jobs or max(1, (os.cpu_count() or 2) // 2)
 
-    layers, graphs, names = load_multiplex(config.HARMONIZED_DIR)
+    loaded, graphs, names = load_multiplex(config.HARMONIZED_DIR, layers)
     n = len(names)
-    print(f"[cmmd] {n:,} nodes across {len(layers)} layers: "
-          + ", ".join(f"{l}({g.ecount():,}e)" for l, g in zip(layers, graphs)))
+    print(f"[cmmd] {n:,} nodes across {len(loaded)} layers: "
+          + ", ".join(f"{l}({g.ecount():,}e)" for l, g in zip(loaded, graphs)))
     print(f"[cmmd] weighting={layer_weighting}  jobs={jobs}")
 
     steps = int(round((resolution_end - resolution_start) / interval))
@@ -206,7 +213,7 @@ def run_cmmd(resolution_start=0.0, resolution_end=30.0, interval=0.5,
     print(f"[cmmd] {len(resolutions)} resolutions {resolutions[0]}..{resolutions[-1]} step {interval}")
 
     membership, communities = sweep(resolutions, config.HARMONIZED_DIR,
-                                    layer_weighting, seed, jobs, n_iterations)
+                                    layer_weighting, seed, jobs, n_iterations, loaded)
     print(f"[cmmd] communities per resolution: {communities[0]} .. {communities[-1]} "
           f"(min {min(communities)}, max {max(communities)})")
 
@@ -250,8 +257,9 @@ def run_cmmd(resolution_start=0.0, resolution_end=30.0, interval=0.5,
     write_provenance(config.CMMD_DIR / "cmmd_report.json", {
         "params": {"resolution_start": resolution_start, "resolution_end": resolution_end,
                    "interval": interval, "seed": seed, "layer_weighting": layer_weighting,
-                   "n_iterations": n_iterations, "nodelist": nodelist, "jobs": jobs},
-        "layers": {l: g.ecount() for l, g in zip(layers, graphs)},
+                   "n_iterations": n_iterations, "nodelist": nodelist, "jobs": jobs,
+                   "layers": loaded},
+        "layers": {l: g.ecount() for l, g in zip(loaded, graphs)},
         "nodes": n,
         "n_resolutions": len(resolutions),
         "resolutions": resolutions,
@@ -270,6 +278,8 @@ def main() -> None:
     ap.add_argument("--interval", type=float, default=0.5)
     ap.add_argument("--seed", type=int, default=42)
     ap.add_argument("--layer-weighting", choices=["normalized", "equal"], default="normalized")
+    ap.add_argument("--layers", nargs="+", default=None,
+                    help="subset of layers to use (default: all), e.g. --layers BioGRID ChEMBL Reactome")
     ap.add_argument("--n-iterations", type=int, default=-1,
                     help="Leiden iterations per resolution (-1 = to convergence; 2 = fast)")
     ap.add_argument("--nodelist", default=None, help="file of gene symbols to restrict the distance matrix")
@@ -279,7 +289,7 @@ def main() -> None:
     run_cmmd(resolution_start=args.resolution_start, resolution_end=args.resolution_end,
              interval=args.interval, seed=args.seed, layer_weighting=args.layer_weighting,
              nodelist=args.nodelist, compute_distance=not args.no_distance, jobs=args.jobs,
-             n_iterations=args.n_iterations)
+             n_iterations=args.n_iterations, layers=args.layers)
 
 
 if __name__ == "__main__":

@@ -124,10 +124,21 @@ resolution_end   = 30.0
 interval         = 0.5
 seed             = 42
 layer_weighting  = "normalized"   # or "equal"
+layers           = []             # which layers to use; [] = all (see "Choosing layers")
 n_iterations     = -1             # -1 = converge (slow); 2 = fast
 nodelist         = ""             # restrict the distance matrix to these genes; "" = all
 compute_distance = true
 ```
+
+### Choosing which layers to analyze
+
+CmmD uses all five layers by default, but you can run on any subset (the node
+universe becomes the union of the selected layers). This affects CmmD only — all
+layers are still built and harmonized, so you can try combinations without
+re-downloading. Set it in `config.toml` (`layers = ["BioGRID", "ChEMBL", "Reactome"]`)
+or on the CLI (`--layers BioGRID ChEMBL Reactome`). This is also the easy way to
+drop layers with commercial-use restrictions (Recon3D; Monarch via OMIM) — see
+**Data sources** for licensing.
 
 Each run **copies the config it used** into its session folder, and records per-step timings in `manifest.json`, for full reproducibility.
 
@@ -194,7 +205,7 @@ python -m pycmmd.layers.monarch      [--force]
 python -m pycmmd.layers.reactome     [--force] [--max-pathway-size 100]
 python -m pycmmd.layers.recon3d      [--force] [--max-metabolite-size 100]
 python -m pycmmd.harmonize           [--force]
-python -m pycmmd.cmmd                [--resolution-end 30 --interval 0.5 --jobs 6 --n-iterations 2 --no-distance]
+python -m pycmmd.cmmd                [--resolution-end 30 --interval 0.5 --jobs 6 --n-iterations 2 --layers BioGRID ChEMBL Reactome --no-distance]
 ```
 
 ---
