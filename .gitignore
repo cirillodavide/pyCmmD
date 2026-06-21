@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.venv/
+
+# generated data (regenerate with the pipeline; raw is a shared download cache)
+data/raw/
+data/runs/
+data/processed/
+data/harmonized/
+data/cmmd/
+_tmp_*.py

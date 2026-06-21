@@ -1,0 +1,32 @@
+# pyCmmD pipeline configuration.
+# Edit values here, then run the whole pipeline with:
+#     python -m pycmmd.run_all
+# Each run writes into a fresh dated folder under data/runs/<timestamp>/ and a
+# copy of this file is saved there for provenance. Downloads are cached/shared
+# in data/raw/ (re-fetched only when force_download = true).
+
+[run]
+jobs = 6                 # parallel worker processes for CmmD (this machine: 6 physical cores)
+force_download = false   # re-download source files even if already cached
+
+[biogrid]
+drop_self_loops = true   # drop gene self-interactions
+
+[chembl]
+min_phase = 1.0          # 1 = approved + clinical, 4 = approved only
+
+[reactome]
+max_pathway_size = 0     # 0 = no cap; e.g. 100 drops the huge co-membership cliques
+
+[recon3d]
+max_metabolite_size = 0  # 0 = no cap
+
+[cmmd]
+resolution_start = 0.0
+resolution_end   = 30.0
+interval         = 0.5
+seed             = 42
+layer_weighting  = "normalized"   # "normalized" (per-layer 1/2m, MolTi-like) or "equal"
+n_iterations     = -1             # -1 = run Leiden to convergence (slow); 2 = fast, near-identical
+nodelist         = ""             # path to a gene-symbol file to restrict the distance matrix; "" = all genes
+compute_distance = true           # set false to skip the Hamming matrix

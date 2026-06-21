@@ -1,0 +1,11 @@
+# Core (used so far)
+# (BioGRID layer uses only the Python standard library)
+
+# Analysis / harmonization
+pandas>=2.0
+numpy>=1.26
+scipy>=1.11
+
+# CmmD multilayer community detection (pure-Python engine)
+python-igraph>=0.11
+leidenalg>=0.10

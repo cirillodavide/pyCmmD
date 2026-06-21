@@ -1,0 +1,47 @@
+# Super-connected "currency" metabolites to prune from the Recon3D metabolic
+# layer (cofactors / ubiquitous small molecules). One BiGG base id per line;
+# compartment suffixes are stripped before matching. Lines starting with # are
+# comments. Carried over from the original gene_multilayer_network pipeline
+# (glu_L kept as glu__L to match current BiGG nomenclature).
+accoa
+ac
+adp
+akg
+amp
+atp
+cdp
+cmp
+co2
+coa
+dna
+fadh2
+fdxrd
+gdp
+glu__L
+glu_L
+gtp
+h2
+h2o2
+h2o
+h
+nad
+nadh
+nadp
+nadph
+nh3
+nh4
+o2
+oaa
+oh1
+pi
+ppi
+pyr
+succ
+udp
+udpg
+ump
+utp
+M01508
+M01463
+HC01609
+ah2
